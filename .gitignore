@@ -1,0 +1,5 @@
+.env
+todo_list_env
+__pycache__
+.mypy_cache
+main_test.py

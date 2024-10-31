@@ -1,5 +1,5 @@
-from sqlmodel import Session, create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy  import  create_engine
+from sqlalchemy.orm import Session,sessionmaker
 from sqlalchemy.ext.declarative import declarative_base
 # Creamos la URL de conexión
 from dotenv import load_dotenv

@@ -1,9 +1,6 @@
-from fastapi import APIRouter,HTTPException,status,Depends,FastAPI
+from fastapi import APIRouter,HTTPException,status
 from pydantic import BaseModel
 from models_test.todo import Todo
-from models_test.todo_state import TodoState
-from typing import Annotated
-from sqlmodel import Session
 from db.conection import db_dependency
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.future import select
@@ -20,9 +17,6 @@ class TodoBase(BaseModel):
   origin_task: int | None = None
   state_id : int
   
-class TodoStateBase(BaseModel):
-  description: str
-  
 @router.get("/todos")
 def get_todo(db:db_dependency):
   todo = db.execute(select(Todo)).scalars().all()
@@ -30,13 +24,8 @@ def get_todo(db:db_dependency):
 
 @router.get("/todos/{todo_id}")
 def get_todo(todo_id: int, db:db_dependency):
-  todo = db.execute(select(Todo)).filter(Todo.id == todo_id).first()
+  todo = db.execute(select(Todo).where(Todo.id == todo_id)).first()
   return todo
-
-@router.get("/todos_states")
-def get_todo(db:db_dependency):
-  todo_states = db.execute(select(TodoState)).scalars().all()
-  return todo_states
   
 @router.post("/create_todo")
 async def create_todo(todo : TodoBase,db:db_dependency):
@@ -60,11 +49,3 @@ async def create_todo(todo : TodoBase,db:db_dependency):
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         detail="Ocurrió un error al crear el todo."
     )
-    
-@router.post("/create_todo_state")
-async def create_todo_state(todo_state : TodoStateBase,db:db_dependency):
-  print(todo_state)
-  todo_state_element = TodoState(description=todo_state.description)
-  db.add(todo_state_element)
-  db.commit()
-  db.refresh(todo_state_element)

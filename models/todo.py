@@ -1,6 +1,4 @@
 from sqlalchemy import Column,ForeignKey,Integer,String
-from sqlalchemy.orm import relationship,validates
-from sqlalchemy.exc import IntegrityError
 from db.conection import Base
   
 class Todo(Base):

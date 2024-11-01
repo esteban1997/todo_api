@@ -1,9 +1,9 @@
 from fastapi import APIRouter,HTTPException,status
-from pydantic import BaseModel
-from models_test.todo import Todo
+from models.todo import Todo
 from db.conection import db_dependency
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.future import select
+from schemas.todo_schemas import TodoBase
 import re
 
 router = APIRouter(
@@ -11,11 +11,6 @@ router = APIRouter(
     tags=["todo"],
     responses={404: {"description": "Not found"}},
 )  
-
-class TodoBase(BaseModel):
-  description: str
-  origin_task: int | None = None
-  state_id : int
   
 @router.get("/todos")
 def get_todo(db:db_dependency):
@@ -28,7 +23,7 @@ def get_todo(todo_id: int, db:db_dependency):
   return todo
   
 @router.post("/create_todo")
-async def create_todo(todo : TodoBase,db:db_dependency):
+async def create_todo(todo : TodoBase,db:db_dependency,status_code=status.HTTP_201_CREATED):
   try:
     todo_element = Todo(description = todo.description,state_id = todo.state_id)
     db.add(todo_element)
@@ -49,3 +44,4 @@ async def create_todo(todo : TodoBase,db:db_dependency):
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         detail="Ocurrió un error al crear el todo."
     )
+  return todo_element

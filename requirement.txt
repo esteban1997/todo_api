@@ -2,3 +2,5 @@ fastapi[standard]
 uvicorn
 sqlmodel
 psycopg2
+pyjwt
+passlib[bcrypt]

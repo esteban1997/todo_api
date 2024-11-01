@@ -7,7 +7,7 @@ from datetime import datetime, timedelta, timezone
 from db.conection import create_db_and_tables,Base
 from jwt.exceptions import InvalidTokenError
 import jwt
-from schemas.authentication_schemas import Token,TokenData,User,UserInDB
+from schemas.authentication_schemas import Token,TokenData,UserSchema,UserInDB
 # from models.token import UserInDB
 
 #without prefix because i want to use it on the docs front provided by fastapi
@@ -117,7 +117,7 @@ async def login_for_access_token(
     )
     return Token(access_token=access_token, token_type="bearer")
 
-@router.get("/users/me/", response_model=User)
+@router.get("/users/me/", response_model=UserSchema)
 async def read_users_me(
     current_user: Annotated[User, Depends(get_current_active_user)],
 ):

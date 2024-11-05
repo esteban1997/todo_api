@@ -9,10 +9,10 @@ class TokenData(BaseModel):
 
 class UserSchema(BaseModel):
     username: str
-    email: str | None = None
-    first_name: str | None = None
+    email: str 
+    first_name: str 
     second_name: str | None = None
-    first_lastname: str | None = None
+    first_lastname: str 
     second_lastname: str | None = None
     disabled: bool | None = None
 

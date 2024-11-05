@@ -1,15 +1,16 @@
 from typing import Annotated
 from datetime import datetime, timedelta, timezone
 from passlib.context import CryptContext
-from fastapi import APIRouter
-from fastapi import Depends,HTTPException,status
+from fastapi import Depends,HTTPException,status,APIRouter
 from fastapi.security import OAuth2PasswordBearer,OAuth2PasswordRequestForm
 
 from db.conection import db_dependency
 
 from sqlalchemy.future import select
+from sqlalchemy.exc import IntegrityError
 
 from schemas.authentication_schemas import Token,TokenData,UserSchema
+from schemas.user_schemas import CreateUser
 from models.user import User
 
 import jwt
@@ -18,6 +19,8 @@ from jwt.exceptions import InvalidTokenError
 import os
 from dotenv import load_dotenv
 load_dotenv()
+
+import re
 
 #without prefix because i want to use it on the docs front provided by fastapi
 router = APIRouter(
@@ -35,8 +38,6 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 #para uso de jwt    
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
-
 #para uso de jwt
 def verify_password(plain_password, hashed_password):
   return pwd_context.verify(plain_password, hashed_password)
@@ -53,9 +54,6 @@ def get_user(username: str, db:db_dependency):
 #para uso de jwt
 def authenticate_user(username: str, password: str,db: db_dependency):
   user = get_user(username,db)
-  print(f'**********************************************************************************')
-  print(f'User object: {user}')
-  print(f'**********************************************************************************')
   if not user:
     return False
   if not verify_password(password, user.hashed_password):
@@ -117,14 +115,41 @@ async def login_for_access_token(
   )
   return Token(access_token=access_token, token_type="bearer")
 
+
+@router.post("/create_user")
+async def create_user(
+  user:CreateUser,
+  db:db_dependency,
+  status_code=status.HTTP_201_CREATED
+):
+  try:
+    user_create = User(username = user.username,
+    email = user.email ,
+    first_name = user.first_name,
+    second_name = user.second_name,
+    first_lastname = user.first_lastname,
+    second_lastname = user.second_lastname,
+    hashed_password = pwd_context.hash(user.password))
+    db.add(user_create)
+    db.commit()
+    db.refresh(user_create)
+  except IntegrityError as e:
+    error_message = str(e.orig)
+    print(error_message)
+    if re.search(r"llave duplicada viola restricción de unicidad «user_username_key»", error_message, re.IGNORECASE):
+      raise HTTPException(
+          status_code=status.HTTP_400_BAD_REQUEST,
+          detail="El nombre de usuario no se encuentra disponible."
+      )
+    # Puedes manejar otros tipos de errores aquí si es necesario
+    raise HTTPException(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        detail="Ocurrió un error al crear el todo."
+    )
+  return {"message" : "usuario creado correctamente"}
+
 @router.get("/users/me/", response_model=UserSchema)
 async def read_users_me(
   current_user: Annotated[User, Depends(get_current_active_user)],
 ):
   return current_user
-
-@router.get("/users/me/items/")
-async def read_own_items(
-  current_user: Annotated[User, Depends(get_current_active_user)],
-):
-  return [{"item_id": "Foo", "owner": current_user.username}]

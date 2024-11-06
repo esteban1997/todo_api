@@ -8,6 +8,7 @@ class TokenData(BaseModel):
     username: str | None = None
 
 class UserSchema(BaseModel):
+    id: int
     username: str
     email: str 
     first_name: str 

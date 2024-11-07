@@ -22,7 +22,7 @@ def get_todo(db:db_dependency):
 
 @router.get("/todos/{todo_id}")
 def get_todo(todo_id: int, db:db_dependency):
-  todo = db.execute(select(Todo).where(Todo.id == todo_id)).first()
+  todo = db.execute(select(Todo).where(Todo.id == todo_id)).scalars().first()
   return todo
   
 @router.post("/create_todo")
@@ -51,5 +51,5 @@ async def read_own_items(
   current_user: Annotated[User, Depends(get_current_active_user)],
   db: db_dependency
 ):
-  todo = db.execute(select(Todo).where(Todo.user_id == current_user.id)).first()
+  todo = db.execute(select(Todo).where(Todo.user_id == current_user.id)).scalars().all()
   return [{"items": todo, "owner": current_user.username}]

@@ -4,6 +4,7 @@ from models.user import User
 from db.conection import db_dependency
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.future import select
+from sqlalchemy import update
 from schemas.todo_schemas import TodoBase
 from typing import Annotated
 from routers.authentication_bd import get_current_active_user
@@ -46,7 +47,28 @@ async def create_todo(todo : TodoBase,db:db_dependency,status_code=status.HTTP_2
     )
   return todo_element
 
-@router.get("/me/items/")
+@router.patch("/update_state_todo")
+async def update_state_todo(todo_id : int,state_id_update : int,db:db_dependency,status_code=status.HTTP_200_OK):
+  try:
+    todo = db.execute(update(Todo).where(Todo.id == todo_id).values(state_id=state_id_update))
+    db.commit()
+    
+  except IntegrityError as e:
+    error_message = str(e.orig)
+    if re.search(r"la llave.*no está presente en la tabla", error_message, re.IGNORECASE):
+      raise HTTPException(
+          status_code=status.HTTP_400_BAD_REQUEST,
+          detail="El estado seleccionado no existe entre las opciones."
+      )
+    # Puedes manejar otros tipos de errores aquí si es necesario
+    raise HTTPException(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        detail="Ocurrió un error al crear el todo."
+    )
+    
+  return todo
+
+@router.get("/me/items")
 async def read_own_items(
   current_user: Annotated[User, Depends(get_current_active_user)],
   db: db_dependency

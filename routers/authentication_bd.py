@@ -148,7 +148,7 @@ async def create_user(
     )
   return {"message" : "usuario creado correctamente"}
 
-@router.get("/users/me/", response_model=UserSchema)
+@router.get("/users/me", response_model=UserSchema)
 async def read_users_me(
   current_user: Annotated[User, Depends(get_current_active_user)],
 ):

@@ -9,3 +9,6 @@ class TodoBase(BaseModel):
 class TodoUpdate(BaseModel):
   id:int
   state_id:int
+  
+class TodoDelete(BaseModel):
+  id:int

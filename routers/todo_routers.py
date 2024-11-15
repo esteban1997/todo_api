@@ -100,9 +100,6 @@ async def delete_todo(
   status_code=status.HTTP_204_NO_CONTENT
 ):
   try:
-    print("***********************************************")
-    print(delete_data)
-    print("***********************************************") 
     todo = db.execute(delete(Todo).where(Todo.id == delete_data.id))
     db.commit()
     

@@ -4,8 +4,8 @@ from models.user import User
 from db.conection import db_dependency
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.future import select
-from sqlalchemy import update
-from schemas.todo_schemas import TodoBase,TodoUpdate
+from sqlalchemy import update,delete
+from schemas.todo_schemas import TodoBase,TodoUpdate,TodoDelete
 from typing import Annotated
 from routers.authentication_bd import get_current_active_user
 import re
@@ -91,10 +91,43 @@ async def update_state_todo(
     
   return {"result":1,"message": "Actualización exitosa"}
 
+  
+@router.delete("/delete_todo")
+async def delete_todo(
+  delete_data : TodoDelete,
+  current_user: Annotated[User, Depends(get_current_active_user)],
+  db:db_dependency,
+  status_code=status.HTTP_204_NO_CONTENT
+):
+  try:
+    todo = db.execute(delete(Todo).where(Todo.id == delete_data.id))
+    db.commit()
+    
+    if todo.rowcount == 0:
+      raise HTTPException(
+          status_code=status.HTTP_404_NOT_FOUND,
+          detail="No se encontró el todo especificado."
+      )
+            
+  except IntegrityError as e:
+    error_message = str(e.orig)
+    if re.search(r"la llave.*no está presente en la tabla", error_message, re.IGNORECASE):
+      raise HTTPException(
+          status_code=status.HTTP_400_BAD_REQUEST,
+          detail="El estado seleccionado no existe entre las opciones."
+      )
+    # Puedes manejar otros tipos de errores aquí si es necesario
+    raise HTTPException(
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        detail="Ocurrió un error al crear el todo."
+    )
+    
+  return {"result":1,"message": "Eliminacion exitosa"}
+
 @router.get("/me/items")
 async def read_own_items(
   current_user: Annotated[User, Depends(get_current_active_user)],
   db: db_dependency
 ):
-  todo = db.execute(select(Todo).where(Todo.user_id == current_user.id)).scalars().all()
+  todo = db.execute(select(Todo).where(Todo.user_id == current_user.id).order_by(Todo.id)).scalars().all()
   return [{"items": todo, "owner": current_user.username}]
